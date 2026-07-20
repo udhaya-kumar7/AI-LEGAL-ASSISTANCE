@@ -24,7 +24,14 @@ export default function Layout() {
   const [showToolPanel, setShowToolPanel] = useState(false);
   const [activeTool, setActiveTool] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ open: false, chatId: null, title: '' });
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 800);
   const streamRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 800);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // ── Hydrate sidebar prefs + fetch chats ──────────────────
   useEffect(() => {
@@ -220,7 +227,10 @@ export default function Layout() {
         {/* Main content */}
         <main
           className="chat-main"
-          style={{ marginLeft: sidebarWidth, marginRight: showToolPanel ? 360 : 0 }}
+          style={{ 
+            marginLeft: isMobile ? 0 : sidebarWidth, 
+            marginRight: isMobile ? 0 : (showToolPanel ? 360 : 0) 
+          }}
         >
           <div className="chat-main-inner">
             <ChatWindow
