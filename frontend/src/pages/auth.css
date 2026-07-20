@@ -179,12 +179,18 @@
 .auth-google-wrap {
   display: flex;
   justify-content: center;
+  align-items: center;
   margin-bottom: 20px;
-  /* Make the Google iframe pill look wider */
+  width: 100%;
 }
 
-.auth-google-wrap > div {
+.auth-google-wrap > div,
+.auth-google-wrap iframe,
+.auth-google-wrap > div > div {
   width: 100% !important;
+  max-width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
 }
 
 /* ── Divider ── */

@@ -1,13 +1,13 @@
-import React, { useState, useRef, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useRef, useEffect, Suspense, lazy, useContext } from 'react';
 import ThemeProvider from './ThemeProvider';
 import Sidebar from './Sidebar';
 import ChatWindow from './ChatWindow';
 import DocumentUpload from '../components/DocumentUpload';
 import { chatApi } from '../utils/api';
+import { AuthContext } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import './chatui.css';
 
-// Lazy-load the Three.js canvas to avoid blocking render
 const ThreeBackground = lazy(() => import('./ThreeBackground'));
 
 export default function Layout() {
@@ -24,14 +24,23 @@ export default function Layout() {
   const [showToolPanel, setShowToolPanel] = useState(false);
   const [activeTool, setActiveTool] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ open: false, chatId: null, title: '' });
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 800);
-  const streamRef = useRef(null);
 
+  // Mobile sidebar state
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  const streamRef = useRef(null);
+  const { user, logout } = useContext(AuthContext);
+
+  // Detect mobile
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 800);
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Close mobile sidebar on route/session change
+  useEffect(() => { setMobileSidebarOpen(false); }, [activeId]);
 
   // ── Hydrate sidebar prefs + fetch chats ──────────────────
   useEffect(() => {
@@ -198,40 +207,84 @@ export default function Layout() {
 
   return (
     <ThemeProvider>
-      {/* 3D animated background */}
       <Suspense fallback={null}>
         <ThreeBackground />
       </Suspense>
 
       <div className="chat-layout">
-        {/* Sidebar */}
-        <Sidebar
-          width={sidebarWidth}
-          collapsed={collapsed}
-          onToggleCollapse={toggleCollapse}
-          sessions={sessions}
-          activeId={activeId}
-          onSelect={(id) => { setActiveId(id); if (!messagesBySession[id]) loadMessages(id); }}
-          onNewChat={() => { startDraft(); setShowToolPanel(false); setActiveTool(null); }}
-          onDocumentAnalyzer={() => {
-            const draftId = startDraft();
-            setDocumentAnalyzerSessions(prev => new Set(prev).add(draftId));
-            setActiveTool('document');
-            setShowToolPanel(true);
-          }}
-          onCaseSearch={() => { startDraft(); setActiveTool('case-search'); setShowToolPanel(true); }}
-          onDelete={(id, title) => setConfirmDelete({ open: true, chatId: id, title: title || 'this chat' })}
-          onRename={(id, title) => updateSessionTitle(id, title)}
-        />
 
-        {/* Main content */}
+        {/* ── Mobile overlay backdrop ── */}
+        <AnimatePresence>
+          {isMobile && mobileSidebarOpen && (
+            <motion.div
+              className="mobile-sidebar-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMobileSidebarOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* ── Sidebar (desktop: fixed left | mobile: slide-in drawer) ── */}
+        <div
+          className={`chat-sidebar-wrapper ${isMobile ? (mobileSidebarOpen ? 'mobile-open' : 'mobile-closed') : ''}`}
+          style={!isMobile ? { width: sidebarWidth } : {}}
+        >
+          <Sidebar
+            width={isMobile ? 280 : sidebarWidth}
+            collapsed={!isMobile && collapsed}
+            onToggleCollapse={isMobile ? () => setMobileSidebarOpen(false) : toggleCollapse}
+            sessions={sessions}
+            activeId={activeId}
+            onSelect={(id) => {
+              setActiveId(id);
+              if (!messagesBySession[id]) loadMessages(id);
+              if (isMobile) setMobileSidebarOpen(false);
+            }}
+            onNewChat={() => { startDraft(); setShowToolPanel(false); setActiveTool(null); if (isMobile) setMobileSidebarOpen(false); }}
+            onDocumentAnalyzer={() => {
+              const draftId = startDraft();
+              setDocumentAnalyzerSessions(prev => new Set(prev).add(draftId));
+              setActiveTool('document');
+              setShowToolPanel(true);
+              if (isMobile) setMobileSidebarOpen(false);
+            }}
+            onCaseSearch={() => { startDraft(); setActiveTool('case-search'); setShowToolPanel(true); if (isMobile) setMobileSidebarOpen(false); }}
+            onDelete={(id, title) => setConfirmDelete({ open: true, chatId: id, title: title || 'this chat' })}
+            onRename={(id, title) => updateSessionTitle(id, title)}
+          />
+        </div>
+
+        {/* ── Main content ── */}
         <main
           className="chat-main"
-          style={{ 
-            marginLeft: isMobile ? 0 : sidebarWidth, 
-            marginRight: isMobile ? 0 : (showToolPanel ? 360 : 0) 
-          }}
+          style={!isMobile ? {
+            marginLeft: sidebarWidth,
+            marginRight: showToolPanel ? 360 : 0
+          } : {}}
         >
+          {/* ── Mobile top bar ── */}
+          {isMobile && (
+            <div className="mobile-topbar">
+              <button className="mobile-menu-btn" onClick={() => setMobileSidebarOpen(true)} aria-label="Open menu">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
+              <div className="mobile-topbar-brand">
+                <span>⚖️</span>
+                <span>LegalAI</span>
+              </div>
+              <div className="mobile-topbar-avatar" onClick={logout} title="Logout">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'G'}
+              </div>
+            </div>
+          )}
+
           <div className="chat-main-inner">
             <ChatWindow
               messages={messages}
@@ -245,7 +298,7 @@ export default function Layout() {
           </div>
         </main>
 
-        {/* Tool panel */}
+        {/* ── Tool panel ── */}
         <AnimatePresence>
           {showToolPanel && (
             <motion.aside
@@ -298,7 +351,7 @@ export default function Layout() {
           )}
         </AnimatePresence>
 
-        {/* Confirm delete modal */}
+        {/* ── Confirm delete modal ── */}
         <AnimatePresence>
           {confirmDelete.open && (
             <motion.div
@@ -319,10 +372,7 @@ export default function Layout() {
                   This will permanently delete <strong>{confirmDelete.title}</strong> and all its messages.
                 </div>
                 <div className="confirm-actions">
-                  <button
-                    className="btn-ghost"
-                    onClick={() => setConfirmDelete({ open: false, chatId: null, title: '' })}
-                  >
+                  <button className="btn-ghost" onClick={() => setConfirmDelete({ open: false, chatId: null, title: '' })}>
                     Cancel
                   </button>
                   <button
