@@ -5,5 +5,8 @@
   "scripts": {
     "build": "npm --prefix frontend install && npm --prefix frontend run build && npm --prefix backend install",
     "start": "npm --prefix backend start"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1"
   }
 }
