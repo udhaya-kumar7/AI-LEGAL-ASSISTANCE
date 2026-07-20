@@ -139,7 +139,7 @@ export default function Signup() {
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
             onError={() => toast.error('Google signup failed')}
-            width="100%"
+            width={360}
             theme="filled_black"
             shape="pill"
             text="signup_with"

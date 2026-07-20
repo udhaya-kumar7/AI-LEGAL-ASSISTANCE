@@ -998,6 +998,7 @@ button { cursor: pointer; font-family: inherit; }
     display: flex;
     flex-direction: column;
     height: 100vh;
+    min-height: 0 !important;
     overflow: hidden;
   }
   .chat-main-inner {
@@ -1006,20 +1007,22 @@ button { cursor: pointer; font-family: inherit; }
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    min-height: 0;
+    min-height: 0 !important;
   }
   .chat-card {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    min-height: 0;
+    min-height: 0 !important;
   }
   .chat-timeline {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 16px 14px 10px;
     -webkit-overflow-scrolling: touch;
+    min-height: 0;
   }
   .chat-input-area {
     padding: 10px 12px 16px;

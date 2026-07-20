@@ -161,7 +161,7 @@ export default function Login() {
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
             onError={() => toast.error('Google login failed')}
-            width="100%"
+            width={360}
             theme="filled_black"
             shape="pill"
           />

@@ -182,6 +182,7 @@
   align-items: center;
   margin-bottom: 20px;
   width: 100%;
+  text-align: center;
 }
 
 .auth-google-wrap > div,
