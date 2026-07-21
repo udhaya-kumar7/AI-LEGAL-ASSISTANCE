@@ -122,9 +122,11 @@ export default function Login() {
       if (data.token) {
         login(data);
         toast.success('Welcome back!');
+      } else {
+        toast.error('Google login failed – no token received');
       }
     } catch (err) {
-      toast.error('Google login failed');
+      toast.error(err.message || 'Google login failed');
     }
   };
 
@@ -134,6 +136,7 @@ export default function Login() {
     try {
       const data = await postJSON('/api/auth/login', { email, password });
       if (data.token) { login(data); toast.success('Welcome back!'); }
+      else { toast.error('Login failed – no token received'); }
     } catch (err) {
       toast.error(err.message || 'Login failed');
     } finally { setLoading(false); }

@@ -21,7 +21,7 @@ export async function postJSON(path, body) {
   const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
   if (!res.ok) {
     let msg = 'Request failed';
-    try { const err = await res.json(); msg = err.message || msg; } catch (e) {}
+    try { const err = await res.json(); msg = err.error || err.message || msg; } catch (e) {}
     throw new Error(msg);
   }
   return res.json();
@@ -33,7 +33,7 @@ export async function getJSON(path) {
   const res = await fetch(url, { method: 'GET', headers });
   if (!res.ok) {
     let msg = 'Request failed';
-    try { const err = await res.json(); msg = err.message || msg; } catch (e) {}
+    try { const err = await res.json(); msg = err.error || err.message || msg; } catch (e) {}
     throw new Error(msg);
   }
   return res.json();
